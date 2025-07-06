@@ -61,7 +61,7 @@ export default function CreateIssue() {
         description: "Your issue has been submitted and will be reviewed by the relevant authorities.",
       });
 
-      navigate('/');
+      navigate('/issues');
     } catch (error: any) {
       console.error('Error creating issue:', error);
       toast({
@@ -81,7 +81,7 @@ export default function CreateIssue() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center space-x-4">
-        <Link to="/">
+        <Link to="/dashboard">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
@@ -176,7 +176,7 @@ export default function CreateIssue() {
             </div>
 
             <div className="flex justify-end space-x-4">
-              <Link to="/">
+              <Link to="/dashboard">
                 <Button type="button" variant="outline">
                   Cancel
                 </Button>
