@@ -45,4 +45,4 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export default app; 
+export default app;

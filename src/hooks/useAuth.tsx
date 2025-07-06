@@ -36,13 +36,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         // Fetch user profile
         try {
-          const userProfile = await profileService.getProfile(user.uid);
+          console.log('Auth: Fetching profile for user:', user.uid);
+          let userProfile = await profileService.getProfile(user.uid);
+          console.log('Auth: Profile fetched:', userProfile);
+          
+          // If no profile exists, create one
+          if (!userProfile) {
+            console.log('Auth: No profile found, creating new profile');
+            const profileData = {
+              userId: user.uid,
+              fullName: user.displayName || user.email?.split('@')[0] || 'User',
+              role: 'citizen' as const,
+              ...(user.photoURL && { avatarUrl: user.photoURL })
+            };
+            
+            try {
+              await profileService.createProfile(profileData);
+              userProfile = await profileService.getProfile(user.uid);
+              console.log('Auth: New profile created:', userProfile);
+            } catch (createError) {
+              console.error('Error creating profile:', createError);
+            }
+          }
+          
           setProfile(userProfile);
         } catch (error) {
           console.error('Error fetching profile:', error);
           setProfile(null);
         }
       } else {
+        console.log('Auth: No user, setting profile to null');
         setProfile(null);
       }
       

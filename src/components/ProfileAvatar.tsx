@@ -61,8 +61,53 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!user || !profile) {
+  // Helper function to get initials
+  const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      console.log('getInitials: Invalid name provided:', name);
+      return 'U';
+    }
+    
+    const initials = name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+    
+    console.log('getInitials: Generated initials:', initials, 'from name:', name);
+    return initials || 'U';
+  };
+
+  // Update newFullName when profile changes - MUST be called before any early returns
+  useEffect(() => {
+    setNewFullName(profile?.fullName || '');
+  }, [profile?.fullName]);
+
+  // Debug logging for Windows devices
+  console.log('ProfileAvatar Debug:', {
+    user: !!user,
+    profile: !!profile,
+    profileData: profile,
+    fullName: profile?.fullName,
+    avatarUrl: profile?.avatarUrl
+  });
+
+  if (!user) {
+    console.log('ProfileAvatar: No user data');
     return null;
+  }
+
+  // If profile is null but user exists, show a fallback
+  if (!profile) {
+    console.log('ProfileAvatar: No profile data, showing fallback');
+    return (
+      <div className={className}>
+        <div className="h-10 w-10 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm">
+          {user.displayName ? getInitials(user.displayName) : user.email?.charAt(0).toUpperCase() || 'U'}
+        </div>
+      </div>
+    );
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,15 +189,6 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const getMembershipStatus = () => {
     // Mock membership status - in real app, this would come from user data
     const membershipTypes = [
@@ -168,11 +204,6 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
 
   const membership = getMembershipStatus();
 
-  // Update newFullName when profile changes
-  useEffect(() => {
-    setNewFullName(profile?.fullName || '');
-  }, [profile?.fullName]);
-
   return (
     <div className={className}>
       <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -185,16 +216,35 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
                 : 'hover:bg-gray-100 hover:scale-105'
             }`}
           >
+            {/* Fallback for debugging - always show initials */}
+            <div 
+              className="h-10 w-10 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm transition-all duration-300 group-hover:scale-110"
+              style={{ backgroundColor: '#2563eb', color: 'white' }}
+            >
+              {getInitials(profile.fullName) || 'U'}
+            </div>
+            
+            {/* Original Avatar component - commented out for debugging */}
+            {/*
             <Avatar className="h-10 w-10 transition-transform duration-300 group-hover:scale-110">
               <AvatarImage 
                 src={profile.avatarUrl ? getOptimizedImageUrl(profile.avatarUrl, { width: 80, height: 80 }) : undefined} 
                 alt={profile.fullName}
                 className="transition-all duration-300"
+                onError={(e) => {
+                  console.log('Avatar image failed to load, showing fallback');
+                  e.currentTarget.style.display = 'none';
+                }}
               />
-              <AvatarFallback className="bg-gradient-primary text-white font-semibold transition-all duration-300">
-                {getInitials(profile.fullName)}
+              <AvatarFallback 
+                className="bg-blue-600 text-white font-semibold transition-all duration-300 flex items-center justify-center"
+                delayMs={100}
+                style={{ backgroundColor: '#2563eb', color: 'white' }}
+              >
+                {getInitials(profile.fullName) || 'U'}
               </AvatarFallback>
             </Avatar>
+            */}
             {membership.type !== 'basic' && (
               <div className={`absolute -top-1 -right-1 w-4 h-4 ${membership.color} rounded-full border-2 border-white transition-all duration-300 ${
                 isDropdownOpen ? 'scale-125' : 'scale-100'
