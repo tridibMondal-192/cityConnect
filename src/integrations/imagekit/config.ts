@@ -3,9 +3,9 @@ import { mockUploadImage, mockGetOptimizedImageUrl } from './mock';
 
 // ImageKit configuration
 export const imagekitConfig = {
-  publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY || 'public_YourImageKitPublicKey',
-  privateKey: import.meta.env.VITE_IMAGEKIT_PRIVATE_KEY || 'private_YourImageKitPrivateKey',
-  urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/your_endpoint',
+  publicKey: 'public_YourImageKitPublicKey', // Replace with your actual public key
+  privateKey: 'private_YourImageKitPrivateKey', // Replace with your actual private key
+  urlEndpoint: 'https://ik.imagekit.io/your_endpoint', // Replace with your actual endpoint
   folder: '/cityconnect/profiles', // Folder where profile images will be stored
   transformation: {
     quality: 80,
