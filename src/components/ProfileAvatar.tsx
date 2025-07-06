@@ -61,53 +61,8 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to get initials
-  const getInitials = (name: string) => {
-    if (!name || typeof name !== 'string') {
-      console.log('getInitials: Invalid name provided:', name);
-      return 'U';
-    }
-    
-    const initials = name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-    
-    console.log('getInitials: Generated initials:', initials, 'from name:', name);
-    return initials || 'U';
-  };
-
-  // Update newFullName when profile changes - MUST be called before any early returns
-  useEffect(() => {
-    setNewFullName(profile?.fullName || '');
-  }, [profile?.fullName]);
-
-  // Debug logging for Windows devices
-  console.log('ProfileAvatar Debug:', {
-    user: !!user,
-    profile: !!profile,
-    profileData: profile,
-    fullName: profile?.fullName,
-    avatarUrl: profile?.avatarUrl
-  });
-
-  if (!user) {
-    console.log('ProfileAvatar: No user data');
+  if (!user || !profile) {
     return null;
-  }
-
-  // If profile is null but user exists, show a fallback
-  if (!profile) {
-    console.log('ProfileAvatar: No profile data, showing fallback');
-    return (
-      <div className={className}>
-        <div className="h-10 w-10 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm">
-          {user.displayName ? getInitials(user.displayName) : user.email?.charAt(0).toUpperCase() || 'U'}
-        </div>
-      </div>
-    );
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,6 +144,15 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const getMembershipStatus = () => {
     // Mock membership status - in real app, this would come from user data
     const membershipTypes = [
@@ -204,6 +168,11 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
 
   const membership = getMembershipStatus();
 
+  // Update newFullName when profile changes
+  useEffect(() => {
+    setNewFullName(profile?.fullName || '');
+  }, [profile?.fullName]);
+
   return (
     <div className={className}>
       <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -216,35 +185,16 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
                 : 'hover:bg-gray-100 hover:scale-105'
             }`}
           >
-            {/* Fallback for debugging - always show initials */}
-            <div 
-              className="h-10 w-10 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm transition-all duration-300 group-hover:scale-110"
-              style={{ backgroundColor: '#2563eb', color: 'white' }}
-            >
-              {getInitials(profile.fullName) || 'U'}
-            </div>
-            
-            {/* Original Avatar component - commented out for debugging */}
-            {/*
             <Avatar className="h-10 w-10 transition-transform duration-300 group-hover:scale-110">
               <AvatarImage 
                 src={profile.avatarUrl ? getOptimizedImageUrl(profile.avatarUrl, { width: 80, height: 80 }) : undefined} 
                 alt={profile.fullName}
                 className="transition-all duration-300"
-                onError={(e) => {
-                  console.log('Avatar image failed to load, showing fallback');
-                  e.currentTarget.style.display = 'none';
-                }}
               />
-              <AvatarFallback 
-                className="bg-blue-600 text-white font-semibold transition-all duration-300 flex items-center justify-center"
-                delayMs={100}
-                style={{ backgroundColor: '#2563eb', color: 'white' }}
-              >
-                {getInitials(profile.fullName) || 'U'}
+              <AvatarFallback className="bg-blue-500 text-white font-semibold transition-all duration-300">
+                {getInitials(profile.fullName || user.displayName || user.email || 'U')}
               </AvatarFallback>
             </Avatar>
-            */}
             {membership.type !== 'basic' && (
               <div className={`absolute -top-1 -right-1 w-4 h-4 ${membership.color} rounded-full border-2 border-white transition-all duration-300 ${
                 isDropdownOpen ? 'scale-125' : 'scale-100'
@@ -275,8 +225,8 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
                     alt={profile.fullName}
                     className="transition-all duration-300"
                   />
-                  <AvatarFallback className="bg-gradient-primary text-white font-semibold text-lg transition-all duration-300">
-                    {getInitials(profile.fullName)}
+                  <AvatarFallback className="bg-blue-500 text-white font-semibold text-lg transition-all duration-300">
+                    {getInitials(profile.fullName || user.displayName || user.email || 'U')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -296,93 +246,91 @@ export default function ProfileAvatar({ className }: ProfileAvatarProps) {
           <DropdownMenuSeparator className="bg-gray-100" />
           
           <DropdownMenuItem 
-            asChild
+            onClick={() => setIsProfileOpen(true)}
             onMouseEnter={() => setHoveredItem('profile')}
             onMouseLeave={() => setHoveredItem(null)}
-            className="px-4 py-3 mx-2 my-1 rounded-xl transition-all duration-300 hover:bg-blue-50 hover:scale-105"
+            className="px-4 py-3 mx-2 my-1 rounded-xl transition-all duration-300 hover:bg-blue-50 hover:scale-105 flex w-full items-center justify-start"
           >
-            <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-              <DialogTrigger asChild>
-                <button className="flex w-full items-center justify-start text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-300">
-                  <Edit className={`mr-3 h-4 w-4 transition-all duration-300 ${
-                    hoveredItem === 'profile' ? 'text-blue-600 scale-110' : 'text-gray-500'
-                  }`} />
-                  Edit Profile
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-white/95 backdrop-blur-md rounded-2xl">
-                <DialogHeader className="pb-4">
-                  <DialogTitle className="text-xl font-bold text-gray-900">Edit Profile</DialogTitle>
-                  <DialogDescription className="text-gray-600">
-                    Update your profile information and picture.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-20 w-20 ring-4 ring-blue-100 transition-all duration-300 hover:ring-blue-200">
-                      <AvatarImage 
-                        src={profile.avatarUrl ? getOptimizedImageUrl(profile.avatarUrl, { width: 160, height: 160 }) : undefined} 
-                        alt={profile.fullName}
-                        className="transition-all duration-300"
-                      />
-                      <AvatarFallback className="bg-gradient-primary text-white font-semibold text-xl transition-all duration-300">
-                        {getInitials(profile.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="flex items-center space-x-2 transition-all duration-300 hover:bg-blue-50 hover:border-blue-300 hover:scale-105"
-                      >
-                        <Camera className="h-4 w-4" />
-                        <span>{isUploading ? 'Uploading...' : 'Change Photo'}</span>
-                      </Button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      <p className="text-xs text-gray-500">
-                        JPG, PNG or GIF. Max 5MB.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={newFullName}
-                      onChange={(e) => setNewFullName(e.target.value)}
-                      placeholder="Enter your full name"
-                      className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <Edit className={`mr-3 h-4 w-4 transition-all duration-300 ${
+              hoveredItem === 'profile' ? 'text-blue-600 scale-110' : 'text-gray-500'
+            }`} />
+            <span className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-300">
+              Edit Profile
+            </span>
+          </DropdownMenuItem>
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-white/95 backdrop-blur-md rounded-2xl">
+              <DialogHeader className="pb-4">
+                <DialogTitle className="text-xl font-bold text-gray-900">Edit Profile</DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  Update your profile information and picture.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-20 w-20 ring-4 ring-blue-100 transition-all duration-300 hover:ring-blue-200">
+                    <AvatarImage 
+                      src={profile.avatarUrl ? getOptimizedImageUrl(profile.avatarUrl, { width: 160, height: 160 }) : undefined} 
+                      alt={profile.fullName}
+                      className="transition-all duration-300"
                     />
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsProfileOpen(false)}
-                      className="transition-all duration-300 hover:bg-gray-50 hover:scale-105"
+                    <AvatarFallback className="bg-blue-500 text-white font-semibold text-xl transition-all duration-300">
+                      {getInitials(profile.fullName || user.displayName || user.email || 'U')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="flex items-center space-x-2 transition-all duration-300 hover:bg-blue-50 hover:border-blue-300 hover:scale-105"
                     >
-                      Cancel
+                      <Camera className="h-4 w-4" />
+                      <span>{isUploading ? 'Uploading...' : 'Change Photo'}</span>
                     </Button>
-                    <Button 
-                      onClick={handleProfileUpdate} 
-                      className="btn-primary transition-all duration-300 hover:scale-105"
-                    >
-                      Save Changes
-                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-gray-500">
+                      JPG, PNG or GIF. Max 5MB.
+                    </p>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </DropdownMenuItem>
+                
+                <div className="space-y-3">
+                  <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={newFullName}
+                    onChange={(e) => setNewFullName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsProfileOpen(false)}
+                    className="transition-all duration-300 hover:bg-gray-50 hover:scale-105"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleProfileUpdate} 
+                    className="btn-primary transition-all duration-300 hover:scale-105"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           
           <DropdownMenuItem 
             onClick={() => setIsMembershipOpen(true)}
